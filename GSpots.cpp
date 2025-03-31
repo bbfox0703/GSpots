@@ -10,7 +10,7 @@ size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffs
         prefixes.push_back({ 0x48, 0x89, 0x05 });
     }
     else if (group == "GNames") {
-		prefixes.push_back({ 0x48, 0x8D, 0x0D }); // > 4.27 
+	prefixes.push_back({ 0x48, 0x8D, 0x0D }); // > 4.27 
         prefixes.push_back({ 0x48, 0x8B, 0x05 }); // < 4.27 idfk
     }
     else if (group == "GObjects") {

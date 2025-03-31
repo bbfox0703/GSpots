@@ -24,7 +24,6 @@ size_t findPatternMask(const std::vector<Byte>& data,
     const std::vector<Byte>& pattern,
     const std::string& mask);
 
-// VirtualAddress - PointerToRawData.
 uint32_t getSectionDelta(const std::vector<Byte>& data, size_t offset);
 
 #endif 

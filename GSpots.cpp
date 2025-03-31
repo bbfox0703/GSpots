@@ -5,39 +5,46 @@
 
 // Fixed prefix to allow signatures to start anywhere within/before the Gs range.
 size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffset, const std::string& group) {
-    std::vector<Byte> prefix;
+    std::vector<std::vector<Byte>> prefixes;
     if (group == "GWorld") {
-        prefix = { 0x48, 0x89, 0x05 }; 
+        prefixes.push_back({ 0x48, 0x89, 0x05 });
     }
     else if (group == "GNames") {
-        prefix = { 0x48, 0x8D, 0x0D }; 
+		prefixes.push_back({ 0x48, 0x8D, 0x0D }); // > 4.27 
+        prefixes.push_back({ 0x48, 0x8B, 0x05 }); // < 4.27 idfk
     }
-    else if (group == "GNames") {
-        prefix = { 0x4C, 0x8B, 0x0D }; 
+    else if (group == "GObjects") {
+        prefixes.push_back({ 0x4C, 0x8B, 0x0D });
     }
     else {
         return foundOffset;
     }
-    // Search from foundOffset, 30 bytes is kinda crazy, but you never know.
+
     size_t searchLimit = 30;
     size_t limit = (foundOffset + searchLimit < data.size()) ? foundOffset + searchLimit : data.size();
-    for (size_t i = foundOffset; i <= limit - prefix.size(); i++) {
-        bool match = true;
-        for (size_t j = 0; j < prefix.size(); j++) {
-            if (data[i + j] != prefix[j]) {
-                match = false;
-                break;
+
+    for (size_t i = foundOffset; i <= limit; i++) {
+        for (const auto& prefix : prefixes) {
+            if (i + prefix.size() > data.size())
+                continue;
+            bool match = true;
+            for (size_t j = 0; j < prefix.size(); j++) {
+                if (data[i + j] != prefix[j]) {
+                    match = false;
+                    break;
+                }
             }
+            if (match)
+                return i; 
         }
-        if (match)
-            return i; 
     }
     return foundOffset;
 }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <game file path>" << std::endl;
+        std::cout << "Close this window then drag and drop the Unreal Engine game onto this exe... OR\n" << std::endl;
+        std::cout << "Usage: " << argv[0] << " <game file path>\n" << std::endl;
         std::cout << "Press Enter to exit...";
         std::cin.get();
         return 1;

@@ -151,8 +151,7 @@ std::vector<Signature> getSignatures() {
         "xxx???xx??xxx?x"
         });
 
-    sigs.push_back({
-        "GNames (Variant 3)",
+    sigs.push_back({"GNames (Variant 3)",
         {0x48, 0x8D, 0x0D, 0x00, 0x00, 0x00, 0x00,
          0xE8, 0x00, 0x00, 0xFF, 0xFF, 0x48, 0x8B, 0xD0,
          0xC6, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01},
@@ -167,22 +166,19 @@ std::vector<Signature> getSignatures() {
 	// START GOBJECTS
     // ----------------------------------------------
 
-    sigs.push_back({
-    "GObjects (Variant 1)",
+    sigs.push_back({"GObjects (Variant 1)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00, 0x03, 0x99, 0x0F,
          0xB7, 0xD2},
         "xxx???xxxxx"
         });
 
-    sigs.push_back({
-    "GObjects (Variant 2)",
+    sigs.push_back({"GObjects (Variant 2)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x41, 0x3B, 0xC0,
          0x7D, 0x17},
         "xxx????xxxxx"
         });
 
-    sigs.push_back({
-    "GObjects (Variant 3)",
+    sigs.push_back({"GObjects (Variant 3)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00, 0x04, 0x90, 0x0F, 0xB7,
          0xC6, 0x8B, 0xD6},
         "xxx???xxxxxxx"

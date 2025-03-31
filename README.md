@@ -20,7 +20,7 @@ Drag and drop the games executable onto GSpots.exe
 
 If the games encrypted, this will not bypass it. 
 
-As time goes on I will add more signatures. If you have a game that is unsupported, feel free to open a ticket requesting support. It will depend if I purchased the game or not, or if someone in the community wants to contribute the signatures. It would be helpful if you included the Unreal Engine version number as well. 
+As time goes on I will add more signatures. If you have a game that is unsupported, feel free to open a ticket requesting support. It will depend if I purchased the game, if I have a game on the same Unreal Engine version, or if someone in the community wants to contribute the signatures. So, it would be helpful if you included the Unreal Engine version number as well. 
 
 # THIS HAS ONLY BEEN TESTED WITH STEAM UE GAMES
 

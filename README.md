@@ -12,9 +12,9 @@ Simple way of getting Gworld, GNames, and GObjects of an Unreal Engine Game.
 
 ## How to use
 
-Download the pre-compiled release, or build in x64-Release. 
+Download the precompiled release, or build in x64-release. 
 
-Drag and drop the games excutable onto GSpots.exe
+Drag and drop the games executable onto GSpots.exe
 
 ### This will not work on EVERY Unreal Engine game, yet.. 
 

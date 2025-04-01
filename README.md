@@ -11,7 +11,7 @@ https://github.com/user-attachments/assets/09385216-2965-4023-9e87-830c1a8e0818
 
 ### This will not work on EVERY Unreal Engine game...
 
-If the games encrypted, this will not bypass it. 
+If the games exe is encrypted, this will not bypass it. 
 
 As time goes on I will add more signatures!  
 If you have a game that is unsupported, feel free to post in the [Game Compatibility Request](https://github.com/Do0ks/GSpots/issues/1) thread. 

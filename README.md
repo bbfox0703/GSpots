@@ -2,13 +2,7 @@
 
 Simple way of getting GWorld, GNames, and GObjects of an Unreal Engine Game.
 
-<details>
-
-  <summary>Demo Video</summary>
-
-  https://github.com/user-attachments/assets/09385216-2965-4023-9e87-830c1a8e0818
-
-</details>
+https://github.com/user-attachments/assets/09385216-2965-4023-9e87-830c1a8e0818
 
 ## How to use
 

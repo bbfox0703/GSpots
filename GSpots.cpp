@@ -10,7 +10,7 @@ size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffs
         prefixes.push_back({ 0x48, 0x89, 0x05 });
     }
     else if (group == "GNames") {
-	prefixes.push_back({ 0x48, 0x8D, 0x0D }); // > 4.27 
+		prefixes.push_back({ 0x48, 0x8D, 0x0D }); // > 4.27 
         prefixes.push_back({ 0x48, 0x8B, 0x05 }); // < 4.27 idfk
     }
     else if (group == "GObjects") {
@@ -52,22 +52,18 @@ int main(int argc, char* argv[]) {
 
     std::string gameFilePath = argv[1];
 
-    // Reads the game binary.
     std::vector<Byte> data = readBinaryFile(gameFilePath);
     if (data.empty()) {
-        std::cout << "Press Enter to exit...";
+        std::cout << "Error..\n\nPress Enter to exit...";
         std::cin.get();
         return 1;
     }
 
-    // Get the hardcoded signatures.
     std::vector<Signature> signatures = getSignatures();
-    if (signatures.empty()) {
-        std::cerr << "No signatures loaded." << std::endl;
-        std::cout << "Press Enter to exit...";
-        std::cin.get();
-        return 1;
-    }
+    
+    // Put XOR encrypted GObjects here..
+
+    // Put chunk padding for nullptr here..
 
     bool foundGWorld = false;
     bool foundGNames = false;

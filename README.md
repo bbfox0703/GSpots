@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/09385216-2965-4023-9e87-830c1a8e0818
 
 # How to use
 
-- Download the precompiled release, or build in x64-release.  
+- Download the precompiled release, or build in x64-release with Multi-Byte Character Set.  
 - Drag and drop the games executable onto GSpots.exe
 
 ### This will not work on EVERY Unreal Engine game...

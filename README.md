@@ -19,3 +19,18 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
 # THIS HAS ONLY BEEN TESTED WITH STEAM UE GAMES
 
 But it should work with any..
+
+### Planned Fetures:
+<details>
+  
+  # Soon:  
+  
+  - Add automatic fetching of the Unreal Engine Version the game is built with (though this will work better with the "later" update listed below).
+  
+  - Add XOR encryption calculations with padding if applicable.
+
+  # Later:  
+
+  - Try to pre calculate point of interest pointer chains such as the player class while the games running. This should function like before (you'll just need the game running before dropping the games exe onto G Spots.exe)
+  
+</details>

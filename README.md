@@ -30,3 +30,12 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
   - Try to pre calculate point of interest pointer chains such as the player class while the games running. This should function like before (you'll just need the game running before dropping the games exe onto G Spots.exe)
   
 </details>
+
+# Updates:
+<details>
+
+- Added the ability to attach to the game IF its running. This is in preperation for future updates.
+
+- Added functions from my other github repository to detect the Unreal Version number. 
+
+</details>

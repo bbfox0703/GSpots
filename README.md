@@ -19,13 +19,13 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
 # Planned Fetures:
 <details>
   
-  # Soon:  
+  ## Soon:  
   
   - Add automatic fetching of the Unreal Engine Version the game is built with (though this will work better with the "later" update listed below).
   
   - Add XOR encryption calculations with padding if applicable.
 
-  # Later:  
+  ## Later:  
 
   - Try to pre calculate point of interest pointer chains such as the player class while the games running. This should function like before (you'll just need the game running before dropping the games exe onto G Spots.exe)
   

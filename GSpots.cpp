@@ -169,33 +169,6 @@ bool IsProcessRunning(const std::string& exeName, DWORD& processID) {
     return false;
 }
 
-// Tries to get the Unreal Engine version
-std::string GetUnrealEngineVersion(const std::string& filePath, const std::string& exeName) {
-    DWORD processID = 0;
-    std::string version;
-
-    // Check if the target process is running.
-    if (IsProcessRunning(exeName, processID)) {
-        std::cout << "Process " << exeName << " is running (PID: " << processID << "). Attaching...\n";
-        HANDLE hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, processID);
-        if (hProcess) {
-            version = GetVersionFromProcessMemory(hProcess);
-            CloseHandle(hProcess);
-        }
-    }
-
-    // If the version from the process is empty or just a marker, try file-based methods.
-    if (version.empty() || version == "EngineVersion" || version == "FEngineVersion")
-        version = GetVersionFromResource(filePath);
-    if (version.empty())
-        version = GetVersionFromFiles(filePath);
-    if (version.empty())
-        version = GetVersionFromMemoryScan();
-
-    return version.empty() ? "Unknown" : version;
-}
-
-
 // Fixed prefix to allow signatures to start anywhere within/before the Gs range.
 size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffset, const std::string& group) {
     std::vector<std::vector<Byte>> prefixes;
@@ -212,10 +185,8 @@ size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffs
     else {
         return foundOffset;
     }
-
     size_t searchLimit = 30;
     size_t limit = (foundOffset + searchLimit < data.size()) ? foundOffset + searchLimit : data.size();
-
     for (size_t i = foundOffset; i <= limit; i++) {
         for (const auto& prefix : prefixes) {
             if (i + prefix.size() > data.size())
@@ -234,6 +205,28 @@ size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffs
     return foundOffset;
 }
 
+// Tries to get the Unreal Engine version.
+std::string GetUnrealEngineVersion(const std::string& filePath, const std::string& exeName) {
+    DWORD processID = 0;
+    std::string version;
+    // Check if the target process is running.
+    if (IsProcessRunning(exeName, processID)) {
+        std::cout << "Process " << exeName << " is running (PID: " << processID << "). Attaching...\n";
+        HANDLE hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, processID);
+        if (hProcess) {
+            version = GetVersionFromProcessMemory(hProcess);
+            CloseHandle(hProcess);
+        }
+    }
+    // If the version from the process is empty or just a marker, try file-based methods.
+    if (version.empty() || version == "EngineVersion" || version == "FEngineVersion")
+        version = GetVersionFromResource(filePath);
+    if (version.empty())
+        version = GetVersionFromFiles(filePath);
+    if (version.empty())
+        version = GetVersionFromMemoryScan();
+    return version.empty() ? "Unknown" : version;
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -245,10 +238,8 @@ int main(int argc, char* argv[]) {
     }
 
     std::string gameFilePath = argv[1];
-
     size_t lastSlash = gameFilePath.find_last_of("\\/");
     std::string exeName = (lastSlash != std::string::npos) ? gameFilePath.substr(lastSlash + 1) : gameFilePath;
-
     std::vector<Byte> data = readBinaryFile(gameFilePath);
     if (data.empty()) {
         std::cout << "Error: Could not open file.\n\nPress Enter to exit...";
@@ -256,58 +247,90 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Put XOR encrypted GObjects here..
-    // Put chunk padding for nullptr here..
-    // Maybe. There's to much shit going on here...
-
-    std::vector<Signature> signatures = getSignatures();
-    bool foundGWorld = false;
-    bool foundGNames = false;
-    bool foundGObjects = false;
-
-    // Obtain the Unreal Engine version.
     std::string ueVersion = GetUnrealEngineVersion(gameFilePath, exeName);
     std::cout << "\nUnreal Engine Version: " << ueVersion << "\n\n";
 
-    // Iterate over each signature and output the first matching signature for each group.
+    // File scanning
+    uint64_t fileGWorld = 0, fileGNames = 0, fileGObjects = 0;
+    std::vector<Signature> signatures = getSignatures();
     for (const auto& sig : signatures) {
         size_t foundOffset = findPatternMask(data, sig.pattern, sig.mask);
         if (foundOffset != std::string::npos && foundOffset + 7 <= data.size()) {
-            if (sig.name.find("GWorld") != std::string::npos)
+            if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0)
                 foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GWorld");
-            else if (sig.name.find("GNames") != std::string::npos)
+            else if (sig.name.find("GNames") != std::string::npos && fileGNames == 0)
                 foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GNames");
-            else if (sig.name.find("GObjects") != std::string::npos)
+            else if (sig.name.find("GObjects") != std::string::npos && fileGObjects == 0)
                 foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GObjects");
 
-            // Reads the 4-byte displacement following the base opcode.
             int32_t disp = *reinterpret_cast<const int32_t*>(&data[foundOffset + 3]);
             size_t nextInstr = foundOffset + 7;
             size_t rawAddress = nextInstr + disp;
             uint32_t sectionDelta = getSectionDelta(data, foundOffset);
             uint64_t computedAddress = rawAddress + sectionDelta;
 
-            if (sig.name.find("GWorld") != std::string::npos && !foundGWorld) {
-                std::cout << "GWorld Offset: 0x" << std::hex << std::uppercase << computedAddress << "\n";
-                foundGWorld = true;
-            }
-            else if (sig.name.find("GNames") != std::string::npos && !foundGNames) {
-                std::cout << "GNames Offset: 0x" << std::hex << std::uppercase << computedAddress << "\n";
-                foundGNames = true;
-            }
-            else if (sig.name.find("GObjects") != std::string::npos && !foundGObjects) {
-                std::cout << "GObjects Offset: 0x" << std::hex << std::uppercase << computedAddress << "\n";
-                foundGObjects = true;
-            }
+            if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0)
+                fileGWorld = computedAddress;
+            else if (sig.name.find("GNames") != std::string::npos && fileGNames == 0)
+                fileGNames = computedAddress;
+            else if (sig.name.find("GObjects") != std::string::npos && fileGObjects == 0)
+                fileGObjects = computedAddress;
         }
     }
 
-    if (!foundGWorld)
-        std::cout << "GWorld signature not found or insufficient data.\n\n";
-    if (!foundGNames)
-        std::cout << "GNames signature not found or insufficient data.\n\n";
-    if (!foundGObjects)
-        std::cout << "GObjects signature not found or insufficient data.\n\n";
+    // Memory scanning.. only if file scan failed and if process is running
+    DWORD processID = 0;
+    bool processRunning = IsProcessRunning(exeName, processID);
+    uint64_t memGWorld = 0, memGNames = 0, memGObjects = 0;
+    if (processRunning) {
+        HANDLE hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, processID);
+        if (hProcess) {
+            for (const auto& sig : signatures) {
+                if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0 && memGWorld == 0)
+                    memGWorld = findOffsetInProcessMemory(hProcess, sig.pattern, sig.mask, "GWorld");
+                else if (sig.name.find("GNames") != std::string::npos && fileGNames == 0 && memGNames == 0)
+                    memGNames = findOffsetInProcessMemory(hProcess, sig.pattern, sig.mask, "GNames");
+                else if (sig.name.find("GObjects") != std::string::npos && fileGObjects == 0 && memGObjects == 0)
+                    memGObjects = findOffsetInProcessMemory(hProcess, sig.pattern, sig.mask, "GObjects");
+            }
+            CloseHandle(hProcess);
+        }
+    }
+
+    if (fileGWorld != 0)
+        std::cout << "GWorld Offset: 0x" << std::hex << std::uppercase << fileGWorld << "\n";
+    else if (memGWorld != 0)
+        std::cout << "GWorld Offset: 0x" << std::hex << std::uppercase << memGWorld << "\n";
+
+    if (fileGNames != 0)
+        std::cout << "GNames Offset: 0x" << std::hex << std::uppercase << fileGNames << "\n";
+    else if (memGNames != 0)
+        std::cout << "GNames Offset: 0x" << std::hex << std::uppercase << memGNames << "\n";
+
+    if (fileGObjects != 0)
+        std::cout << "GObjects Offset: 0x" << std::hex << std::uppercase << fileGObjects << "\n";
+    else if (memGObjects != 0)
+        std::cout << "GObjects Offset: 0x" << std::hex << std::uppercase << memGObjects << "\n";
+
+    bool missing = false;
+    if ((fileGWorld == 0 && memGWorld == 0) ||
+        (fileGNames == 0 && memGNames == 0) ||
+        (fileGObjects == 0 && memGObjects == 0))
+    {
+        missing = true;
+    }
+    if (missing) {
+        if (fileGWorld == 0 && memGWorld == 0)
+            std::cout << "GWorld signature not found...\n";
+        if (fileGNames == 0 && memGNames == 0)
+            std::cout << "GNames signature not found...\n";
+        if (fileGObjects == 0 && memGObjects == 0)
+            std::cout << "GObjects signature not found...\n";
+        if (processRunning)
+            std::cout << "\nSubmit a compatibility request on GSpots official GitHub!\n\n";
+        else
+            std::cout << "\nTry running the game in the background and try again!\n\n";
+    }
 
     std::cout << "\nPress Enter to exit...";
     std::cin.get();

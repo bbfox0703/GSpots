@@ -19,6 +19,8 @@ Simple way of getting GWorld, GNames, and GObjects of an Unreal Engine Game.
 - Download the precompiled release, or build in x64-release with Multi-Byte Character Set.  
 - Drag and drop the games executable onto GSpots.exe
 
+- You don't have to have the game running in the background, but if you do it will improve scanning results greatly. GSpots will automatically attach to the games process, if it fails to find offsets with the file scan method, it will try to find the missing ones in the games memory.
+
 ### This will not work on EVERY Unreal Engine game...
 
 If the games exe is encrypted, this will not bypass it. 

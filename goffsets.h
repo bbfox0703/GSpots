@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <windows.h>
 
 using Byte = unsigned char;
 
@@ -13,17 +14,17 @@ struct Signature {
     std::string mask;
 };
 
-// Reads an entire binary file into a vector.
 std::vector<Byte> readBinaryFile(const std::string& filename);
 
-// Returns the hardcoded signatures.
 std::vector<Signature> getSignatures();
 
-// Searches for a pattern with wildcards in the data. 'x' = fixed byte, '?' = wildcard.
+// 'x' = fixed byte, '?' = wildcard.
 size_t findPatternMask(const std::vector<Byte>& data,
     const std::vector<Byte>& pattern,
     const std::string& mask);
 
 uint32_t getSectionDelta(const std::vector<Byte>& data, size_t offset);
+uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pattern, const std::string& mask, const std::string& group);
+size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffset, const std::string& group);
 
-#endif 
+#endif

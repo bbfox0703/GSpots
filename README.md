@@ -35,9 +35,14 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
   
   - Add XOR encryption calculations with padding if applicable.
 
+  - Added memory scan if the games running in the background to try finding the offsets file scanning failed at.
+    Memory scanning is in beta.. It worked for every game i tried, and the one that it didn't work for has obfuscation.
+
+    This update should help compatibility greatly!
+
   ## Later:  
 
-  - Try to pre calculate point of interest pointer chains such as the player class while the games running. This should function like before (you'll just need the game running before dropping the games exe onto G Spots.exe)
+  - Try to pre calculate point of interest pointer chains such as the player class while the games running. This should function like before (you'll just need the game running before dropping the games exe onto GSpots.exe)
   
 </details>
 
@@ -46,6 +51,9 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
 
 - Added the ability to attach to the game IF its running. This is in preperation for future updates.
 
-- Added functions from my other github repository to detect the Unreal Version number. 
+- Added functions from my other github repository to detect the Unreal Version number.
+
+- Added memory scan if the games running in the background to try finding the offsets file scanning failed at.
+Memory scanning is in beta.. It worked for every game i tried, and the one that it didn't work for has obfuscation. This update should help compatibility greatly!
 
 </details>

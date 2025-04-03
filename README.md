@@ -59,3 +59,10 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
 Memory scanning is in beta.. It worked for every game i tried, and the one that it didn't work for has obfuscation. This update should help compatibility greatly!
 
 </details>
+
+# Disclosure:
+<details>
+
+- If you choose to use this tool with a online game and you get banned, thats on you. I put no effort into making this tool evade anti cheat detection. While I don't expect anyone to be banned for using GSpots (while the game is running), it's an obvious risk.  
+
+</details>

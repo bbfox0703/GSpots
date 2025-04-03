@@ -23,9 +23,9 @@ Simple way of getting GWorld, GNames, and GObjects of an Unreal Engine Game.
 
 ### This will not work on EVERY Unreal Engine game...
 
-If the games exe is encrypted, this will not bypass it. 
+If the games exe is encrypted, this could bypass it via the memory scan, but if they have taken the time to encrypt the exe, chances are they also took the time obfuscating GObjects.. 
 
-As time goes on I will add more signatures!  
+<b>As time goes on I will add more signatures!</b>  
 If you have a game that is unsupported, feel free to post in the [Game Compatibility Request](https://github.com/Do0ks/GSpots/issues/1) thread. 
 
 # Planned Fetures:

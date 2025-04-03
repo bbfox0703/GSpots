@@ -3,78 +3,9 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
-
-#pragma pack(push, 1)
-struct IMAGE_DOS_HEADER {
-    uint16_t e_magic;
-    uint16_t e_cblp;
-    uint16_t e_cp;
-    uint16_t e_crlc;
-    uint16_t e_cparhdr;
-    uint16_t e_minalloc;
-    uint16_t e_maxalloc;
-    uint16_t e_ss;
-    uint16_t e_sp;
-    uint16_t e_csum;
-    uint16_t e_ip;
-    uint16_t e_cs;
-    uint16_t e_lfarlc;
-    uint16_t e_ovno;
-    uint16_t e_res[4];
-    uint16_t e_oemid;
-    uint16_t e_oeminfo;
-    uint16_t e_res2[10];
-    int32_t  e_lfanew;
-};
-
-struct IMAGE_FILE_HEADER {
-    uint16_t Machine;
-    uint16_t NumberOfSections;
-    uint32_t TimeDateStamp;
-    uint32_t PointerToSymbolTable;
-    uint32_t NumberOfSymbols;
-    uint16_t SizeOfOptionalHeader;
-    uint16_t Characteristics;
-};
-
-struct IMAGE_OPTIONAL_HEADER32 {
-    uint16_t Magic;
-    uint8_t  MajorLinkerVersion;
-    uint8_t  MinorLinkerVersion;
-    uint32_t SizeOfCode;
-    uint32_t SizeOfInitializedData;
-    uint32_t SizeOfUninitializedData;
-    uint32_t AddressOfEntryPoint;
-    uint32_t BaseOfCode;
-    uint32_t BaseOfData;
-    uint32_t ImageBase;
-};
-
-struct IMAGE_OPTIONAL_HEADER64 {
-    uint16_t Magic;
-    uint8_t  MajorLinkerVersion;
-    uint8_t  MinorLinkerVersion;
-    uint32_t SizeOfCode;
-    uint32_t SizeOfInitializedData;
-    uint32_t SizeOfUninitializedData;
-    uint32_t AddressOfEntryPoint;
-    uint32_t BaseOfCode;
-    uint64_t ImageBase;
-};
-
-struct IMAGE_SECTION_HEADER {
-    uint8_t  Name[8];
-    uint32_t VirtualSize;
-    uint32_t VirtualAddress;
-    uint32_t SizeOfRawData;
-    uint32_t PointerToRawData;
-    uint32_t PointerToRelocations;
-    uint32_t PointerToLinenumbers;
-    uint16_t NumberOfRelocations;
-    uint16_t NumberOfLinenumbers;
-    uint32_t Characteristics;
-};
-#pragma pack(pop)
+#include <vector>
+#include <windows.h>
+#include <Psapi.h>
 
 // Reads the binary file.
 std::vector<Byte> readBinaryFile(const std::string& filename) {
@@ -153,7 +84,7 @@ std::vector<Signature> getSignatures() {
         "xxx???xx??xxx?x"
         });
 
-    sigs.push_back({"GNames (Variant 3)",
+    sigs.push_back({ "GNames (Variant 3)",
         {0x48, 0x8D, 0x0D, 0x00, 0x00, 0x00,
          0x00, 0xE8, 0x00, 0x00, 0xFF, 0xFF,
          0x48, 0x8B, 0xD0, 0xC6, 0x05, 0x00,
@@ -171,24 +102,24 @@ std::vector<Signature> getSignatures() {
     // ----------------------------------------------
     // END GNAMES
     // ----------------------------------------------
-     
+
     // ----------------------------------------------
-	// START GOBJECTS
+    // START GOBJECTS
     // ----------------------------------------------
 
-    sigs.push_back({"GObjects (Variant 1)",
+    sigs.push_back({ "GObjects (Variant 1)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
          0x00, 0x99, 0x0F, 0xB7, 0xD2},
         "xxx????xxxx"
         });
 
-    sigs.push_back({"GObjects (Variant 2)",
+    sigs.push_back({ "GObjects (Variant 2)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
          0x00, 0x41, 0x3B, 0xC0, 0x7D, 0x17},
         "xxx????xxxxx"
         });
 
-    sigs.push_back({"GObjects (Variant 3)",
+    sigs.push_back({ "GObjects (Variant 3)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
          0x04, 0x90, 0x0F, 0xB7, 0xC6, 0x8B,
          0xD6},
@@ -251,4 +182,28 @@ uint32_t getSectionDelta(const std::vector<Byte>& data, size_t offset) {
         }
     }
     return 0;
+}
+
+// Memory scanning fallback to find offsets in the process memory.
+uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pattern, const std::string& mask, const std::string& group) {
+    HMODULE hMod;
+    DWORD cbNeeded;
+    if (!EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded))
+        return 0;
+    MODULEINFO modInfo = { 0 };
+    if (!GetModuleInformation(hProcess, hMod, &modInfo, sizeof(modInfo)))
+        return 0;
+    std::vector<Byte> buffer(modInfo.SizeOfImage);
+    SIZE_T bytesRead;
+    if (!ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead))
+        return 0;
+    size_t foundOffset = findPatternMask(buffer, pattern, mask);
+    if (foundOffset == std::string::npos || foundOffset + 7 > buffer.size())
+        return 0;
+    foundOffset = adjustFoundOffsetForGroup(buffer, foundOffset, group);
+    int32_t disp = *reinterpret_cast<const int32_t*>(&buffer[foundOffset + 3]);
+    size_t nextInstr = foundOffset + 7;
+    size_t rawAddress = nextInstr + disp;
+    uint64_t rva = rawAddress;
+    return rva;
 }

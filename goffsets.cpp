@@ -6,6 +6,7 @@
 #include <vector>
 #include <windows.h>
 #include <Psapi.h>
+#include <cmath> 
 
 // Reads the binary file.
 std::vector<Byte> readBinaryFile(const std::string& filename) {
@@ -59,6 +60,20 @@ std::vector<Signature> getSignatures() {
          0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
          0x00, 0x00, 0x00, 0x00, 0x00},
         "?x???xx?xxx?????x???xx?????x?"
+        });
+
+    sigs.push_back({ "GWorld (Variant 5)",
+        {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
+         0x02, 0x48, 0x8B, 0x8F, 0xA0, 0x00,
+         0x00, 0x00},
+        "xxx???xxxxx???"
+        }); //IDK about this AOB.
+
+    sigs.push_back({ "GWorld (Variant 6)",
+        {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
+         0x00, 0x49, 0x8B, 0x00, 0x78, 0xF6,
+         0x00, 0x3B, 0x01, 0x00, 0x00, 0x40},
+        "xxx????xx?xx?xx??x"
         });
 
     // ----------------------------------------------
@@ -120,6 +135,13 @@ std::vector<Signature> getSignatures() {
         });
 
     sigs.push_back({ "GObjects (Variant 3)",
+        {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
+         0x04, 0x90, 0x0F, 0xB7, 0xC6, 0x8B,
+         0xD6},
+        "xxx???xxxxxxx"
+        });
+
+    sigs.push_back({ "GObjects (Variant 4)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
          0x04, 0x90, 0x0F, 0xB7, 0xC6, 0x8B,
          0xD6},
@@ -206,4 +228,26 @@ uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pat
     size_t rawAddress = nextInstr + disp;
     uint64_t rva = rawAddress;
     return rva;
+}
+
+// Calculates the entropy data.
+double calculateEntropy(const std::vector<Byte>& data) {
+    std::vector<double> freq(256, 0.0);
+    for (Byte b : data) {
+        freq[b]++;
+    }
+    double entropy = 0.0;
+    for (double count : freq) {
+        if (count > 0) {
+            double p = count / static_cast<double>(data.size());
+            entropy -= p * log2(p);
+        }
+    }
+    return entropy;
+}
+
+// Checks if the file appears to be encrypted.
+bool IsFileEncrypted(const std::vector<Byte>& data) {
+    double entropy = calculateEntropy(data);
+    return entropy > 7.5;
 }

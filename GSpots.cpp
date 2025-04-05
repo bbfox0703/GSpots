@@ -250,32 +250,41 @@ int main(int argc, char* argv[]) {
     std::string ueVersion = GetUnrealEngineVersion(gameFilePath, exeName);
     std::cout << "\nUnreal Engine Version: " << ueVersion << "\n\n";
 
-    // File scanning
+    // NEW: Check if encrypted.
+    bool fileEncrypted = IsFileEncrypted(data);
+
+    // Scan file only if its not encrypted)
     uint64_t fileGWorld = 0, fileGNames = 0, fileGObjects = 0;
     std::vector<Signature> signatures = getSignatures();
-    for (const auto& sig : signatures) {
-        size_t foundOffset = findPatternMask(data, sig.pattern, sig.mask);
-        if (foundOffset != std::string::npos && foundOffset + 7 <= data.size()) {
-            if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0)
-                foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GWorld");
-            else if (sig.name.find("GNames") != std::string::npos && fileGNames == 0)
-                foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GNames");
-            else if (sig.name.find("GObjects") != std::string::npos && fileGObjects == 0)
-                foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GObjects");
+    if (!fileEncrypted) {
+        for (const auto& sig : signatures) {
+            size_t foundOffset = findPatternMask(data, sig.pattern, sig.mask);
+            if (foundOffset != std::string::npos && foundOffset + 7 <= data.size()) {
+                if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0)
+                    foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GWorld");
+                else if (sig.name.find("GNames") != std::string::npos && fileGNames == 0)
+                    foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GNames");
+                else if (sig.name.find("GObjects") != std::string::npos && fileGObjects == 0)
+                    foundOffset = adjustFoundOffsetForGroup(data, foundOffset, "GObjects");
 
-            int32_t disp = *reinterpret_cast<const int32_t*>(&data[foundOffset + 3]);
-            size_t nextInstr = foundOffset + 7;
-            size_t rawAddress = nextInstr + disp;
-            uint32_t sectionDelta = getSectionDelta(data, foundOffset);
-            uint64_t computedAddress = rawAddress + sectionDelta;
+                int32_t disp = *reinterpret_cast<const int32_t*>(&data[foundOffset + 3]);
+                size_t nextInstr = foundOffset + 7;
+                size_t rawAddress = nextInstr + disp;
+                uint32_t sectionDelta = getSectionDelta(data, foundOffset);
+                uint64_t computedAddress = rawAddress + sectionDelta;
 
-            if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0)
-                fileGWorld = computedAddress;
-            else if (sig.name.find("GNames") != std::string::npos && fileGNames == 0)
-                fileGNames = computedAddress;
-            else if (sig.name.find("GObjects") != std::string::npos && fileGObjects == 0)
-                fileGObjects = computedAddress;
+                if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0)
+                    fileGWorld = computedAddress;
+                else if (sig.name.find("GNames") != std::string::npos && fileGNames == 0)
+                    fileGNames = computedAddress;
+                else if (sig.name.find("GObjects") != std::string::npos && fileGObjects == 0)
+                    fileGObjects = computedAddress;
+            }
         }
+    }
+    // If the file is encrypted and the process is not running.
+    else if (!IsProcessRunning(exeName, *(new DWORD))) {
+        std::cout << "It looks like this exe is encrypted but I might be able to find them in memory...";
     }
 
     // Memory scanning.. only if file scan failed and if process is running
@@ -297,6 +306,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Print offsets if found.
     if (fileGWorld != 0)
         std::cout << "GWorld Offset: 0x" << std::hex << std::uppercase << fileGWorld << "\n";
     else if (memGWorld != 0)
@@ -312,6 +322,12 @@ int main(int argc, char* argv[]) {
     else if (memGObjects != 0)
         std::cout << "GObjects Offset: 0x" << std::hex << std::uppercase << memGObjects << "\n";
 
+    // If the file is encrypted and the process is running
+    if (fileEncrypted && processRunning && memGWorld && memGNames && memGObjects) {
+        std::cout << "\nIt looks like the exe is encrypted..\nThere may be obfuscation happening that may render these offsets invalid.\n";
+    }
+
+    // If not encrypted.
     bool missing = false;
     if ((fileGWorld == 0 && memGWorld == 0) ||
         (fileGNames == 0 && memGNames == 0) ||
@@ -319,16 +335,22 @@ int main(int argc, char* argv[]) {
     {
         missing = true;
     }
-    if (missing) {
-        if (fileGWorld == 0 && memGWorld == 0)
-            std::cout << "GWorld signature not found...\n";
-        if (fileGNames == 0 && memGNames == 0)
-            std::cout << "GNames signature not found...\n";
-        if (fileGObjects == 0 && memGObjects == 0)
-            std::cout << "GObjects signature not found...\n";
-        if (processRunning)
-            std::cout << "\nSubmit a compatibility request on GSpots official GitHub!\n\n";
-        else
+    if (!fileEncrypted) {
+        if (missing) {
+            if (fileGWorld == 0 && memGWorld == 0)
+                std::cout << "GWorld signature not found...\n";
+            if (fileGNames == 0 && memGNames == 0)
+                std::cout << "GNames signature not found...\n";
+            if (fileGObjects == 0 && memGObjects == 0)
+                std::cout << "GObjects signature not found...\n";
+            if (processRunning)
+                std::cout << "\nSubmit a compatibility request on GSpots official GitHub!\n\n";
+            else
+                std::cout << "\nTry running the game in the background and try again!\n\n";
+        }
+    }
+    else {
+        if (!processRunning)
             std::cout << "\nTry running the game in the background and try again!\n\n";
     }
 

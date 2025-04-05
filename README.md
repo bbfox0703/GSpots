@@ -33,14 +33,11 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
   
   ## Soon:  
   
-  - Add automatic fetching of the Unreal Engine Version the game is built with (though this will work better with the "later" update listed below).
+  - Add automatic fetching of the Unreal Engine Version the game is built with. :white_check_mark:
   
   - Add XOR encryption calculations with padding if applicable.
 
-  - Added memory scan if the games running in the background to try finding the offsets file scanning failed at.
-    Memory scanning is in beta.. It worked for every game i tried, and the one that it didn't work for has obfuscation.
-
-    This update should help compatibility greatly!
+  - Added memory scan if the games running in the background to try finding the offsets file scanning failed at. :white_check_mark:
 
   ## Later:  
 
@@ -58,11 +55,13 @@ If you have a game that is unsupported, feel free to post in the [Game Compatibi
 - Added memory scan if the games running in the background to try finding the offsets file scanning failed at.
 Memory scanning is in beta.. It worked for every game i tried, and the one that it didn't work for has obfuscation. This update should help compatibility greatly!
 
+- Added The ability to detect and handle encrypted exes.
+
 </details>
 
 # Disclosure:
 <details>
 
-- If you choose to use this tool with a online game and you get banned, thats on you. I put no effort into making this tool evade anti cheat detection. While I don't expect anyone to be banned for using GSpots (while the game is running), it's an obvious risk.  
+- If you choose to use this tool with a online game and you get banned, thats on you. I put no effort into making this tool evade anti cheat detection. While I don't expect anyone to be banned (I havent yet) for using GSpots, It's always a risk.
 
 </details>

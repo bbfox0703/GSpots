@@ -27,4 +27,8 @@ uint32_t getSectionDelta(const std::vector<Byte>& data, size_t offset);
 uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pattern, const std::string& mask, const std::string& group);
 size_t adjustFoundOffsetForGroup(const std::vector<Byte>& data, size_t foundOffset, const std::string& group);
 
+// Encryption check.
+double calculateEntropy(const std::vector<Byte>& data);
+bool IsFileEncrypted(const std::vector<Byte>& data);
+
 #endif

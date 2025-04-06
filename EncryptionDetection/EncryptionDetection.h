@@ -1,24 +1,11 @@
-#include "./EncryptionDetection/EncryptionDetection.h"
-#include "./GOffsets/GOffsets.h"
-#include <cmath>
+#ifndef ENCRYPTION_DETECTION_H
+#define ENCRYPTION_DETECTION_H
+
 #include <vector>
+#include "../GOffsets/GOffsets.h"
 
-double calculateEntropy(const std::vector<Byte>& data) {
-    std::vector<double> freq(256, 0.0);
-    for (Byte b : data) {
-        freq[b]++;
-    }
-    double entropy = 0.0;
-    for (double count : freq) {
-        if (count > 0) {
-            double p = count / static_cast<double>(data.size());
-            entropy -= p * log2(p);
-        }
-    }
-    return entropy;
-}
+// Encryption detection functions.
+double calculateEntropy(const std::vector<Byte>& data);
+bool IsFileEncrypted(const std::vector<Byte>& data);
 
-bool IsFileEncrypted(const std::vector<Byte>& data) {
-    double entropy = calculateEntropy(data);
-    return entropy > 7.5;
-}
+#endif

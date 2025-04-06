@@ -127,16 +127,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="EncryptionDetection.cpp" />
+    <ClCompile Include="EncryptionDetection/EncryptionDetection.cpp" />
     <ClCompile Include="GSpots.cpp" />
-    <ClCompile Include="goffsets.cpp" />
-    <ClCompile Include="UEVersionScanner.cpp" />
+    <ClCompile Include="GOffsets/GOffsets.cpp" />
+    <ClCompile Include="UEVersionScanner/UEVersionScanner.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EncryptionDetection.h" />
+    <ClInclude Include="EncryptionDetection/EncryptionDetection.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="goffsets.h" />
-    <ClInclude Include="UEVersionScanner.h" />
+    <ClInclude Include="GOffsets/GOffsets.h" />
+    <ClInclude Include="UEVersionScanner/UEVersionScanner.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GSpots.rc" />

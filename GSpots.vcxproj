@@ -50,7 +50,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -127,12 +127,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EncryptionDetection.cpp" />
     <ClCompile Include="GSpots.cpp" />
-    <ClCompile Include="signatures.cpp" />
+    <ClCompile Include="goffsets.cpp" />
+    <ClCompile Include="UEVersionScanner.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="EncryptionDetection.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="signatures.h" />
+    <ClInclude Include="goffsets.h" />
+    <ClInclude Include="UEVersionScanner.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GSpots.rc" />

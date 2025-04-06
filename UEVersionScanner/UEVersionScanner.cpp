@@ -1,5 +1,5 @@
-#include "./UEVersionScanner/UEVersionScanner.h"
-#include "./GOffsets/GOffsets.h"
+#include "UEVersionScanner.h"
+#include "../GOffsets/GOffsets.h"
 
 #include <iostream>
 #include <fstream>

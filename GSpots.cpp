@@ -1,6 +1,6 @@
-#include "./GOffsets/GOffsets.h"
-#include "./UEVersionScanner/UEVersionScanner.h"
-#include "./EncryptionDetection/EncryptionDetection.h"
+#include "GOffsets/GOffsets.h"
+#include "UEVersionScanner/UEVersionScanner.h"
+#include "EncryptionDetection/EncryptionDetection.h"
 
 #include <iostream>
 #include <string>

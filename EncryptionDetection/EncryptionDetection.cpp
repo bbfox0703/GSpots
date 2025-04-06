@@ -1,5 +1,6 @@
-#include "./EncryptionDetection/EncryptionDetection.h"
-#include "./GOffsets/GOffsets.h"
+#include "EncryptionDetection.h"
+#include "../GOffsets/GOffsets.h"
+
 #include <cmath>
 #include <vector>
 

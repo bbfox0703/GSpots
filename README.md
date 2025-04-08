@@ -65,3 +65,13 @@ Memory scanning is in beta.. It worked for every game i tried, and the one that 
 - If you choose to use this tool with a online game and you get banned, thats on you. I put no effort into making this tool evade anti cheat detection. While I don't expect anyone to be banned (I havent yet) for using GSpots, It's always a risk.
 
 </details>
+
+# Some Other Awesome Tools!
+
+<details>
+
+ - Injectable Memory Scanner - https://github.com/Do0ks/B2D-Scanner
+
+ - DLL Injector - https://github.com/Do0ks/Injector
+
+</details>

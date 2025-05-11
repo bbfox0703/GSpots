@@ -14,6 +14,9 @@ Simple way of getting GWorld, GNames, and GObjects of an Unreal Engine Game.
 
  </details>
 
+ &bull; 
+ <a href="https://discord.gg/7nGkqwdJhn">Discord</a>
+
 # How to use
 
 - Download the precompiled release, or build in x64-release with Multi-Byte Character Set.  

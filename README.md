@@ -15,7 +15,8 @@ Simple way of getting GWorld, GNames, and GObjects of an Unreal Engine Game.
  </details>
 
  &bull; 
- <a href="https://discord.gg/7nGkqwdJhn">Discord</a>
+ <a href="https://discord.gg/7nGkqwdJhn">Discord</a>  
+- Looking for a new memory editor? - https://github.com/Do0ks/MemRE
 
 # How to use
 

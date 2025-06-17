@@ -12,11 +12,10 @@ Simple way of getting GWorld, GNames, and GObjects of an Unreal Engine Game.
 
    https://github.com/user-attachments/assets/dba9ca71-98ce-4fb8-af61-86e96e7cb997
 
- </details>
+ </details>  
 
- &bull; 
- <a href="https://discord.gg/7nGkqwdJhn">Discord</a>  
-- Looking for a new memory editor? - https://github.com/Do0ks/MemRE
+## Need Help? Join our <a href="https://discord.gg/7nGkqwdJhn">Discord</a>  
+Looking for a new memory editor? - https://github.com/Do0ks/MemRE
 
 # How to use
 

@@ -16,10 +16,19 @@ std::vector<Byte> readBinaryFile(const std::string& filename) {
         return {};
     }
     file.seekg(0, std::ios::end);
-    size_t fileSize = file.tellg();
+    std::streampos fileSizePos = file.tellg();
+    if (fileSizePos == std::streampos(-1)) {
+        std::cerr << "Error: Failed to determine size of " << filename << std::endl;
+        return {};
+    }
+    size_t fileSize = static_cast<size_t>(fileSizePos);
     std::vector<Byte> buffer(fileSize);
     file.seekg(0, std::ios::beg);
     file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+    if (!file || static_cast<size_t>(file.gcount()) != fileSize) {
+        std::cerr << "Error: Failed to read file " << filename << std::endl;
+        return {};
+    }
     return buffer;
 }
 

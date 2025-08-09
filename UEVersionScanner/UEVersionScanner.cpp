@@ -27,6 +27,11 @@ static bool FileExists(const std::string& filePath) {
     return (attrib != INVALID_FILE_ATTRIBUTES && !(attrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
+// Helper: ensures the buffer we want to scan is large enough for the marker.
+static bool CanScan(size_t bufferSize, size_t markerLen) {
+    return bufferSize >= markerLen;
+}
+
 std::string GetVersionFromResource(const std::string& filePath) {
     char modulePath[MAX_PATH] = { 0 };
     strcpy_s(modulePath, filePath.c_str());
@@ -97,6 +102,8 @@ std::string GetVersionFromMemoryScan() {
     std::vector<std::string> markers = { "Unreal Engine 4.", "Unreal Engine 5.", "FEngineVersion", "EngineVersion" };
     for (const auto& marker : markers) {
         size_t markerLen = marker.length();
+        if (!CanScan(moduleSize, markerLen))
+            continue;
         for (size_t i = 0; i < moduleSize - markerLen; i++) {
             if (memcmp(baseAddr + i, marker.c_str(), markerLen) == 0) {
                 std::string found(marker);
@@ -125,6 +132,8 @@ std::string GetVersionFromProcessMemory(HANDLE hProcess) {
                 std::vector<std::string> markers = { "Unreal Engine 4.", "Unreal Engine 5.", "FEngineVersion", "EngineVersion" };
                 for (const auto& marker : markers) {
                     size_t markerLen = marker.length();
+                    if (!CanScan(buffer.size(), markerLen))
+                        continue;
                     for (size_t i = 0; i < buffer.size() - markerLen; i++) {
                         if (memcmp(buffer.data() + i, marker.c_str(), markerLen) == 0) {
                             std::string found(marker);

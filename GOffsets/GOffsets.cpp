@@ -240,11 +240,14 @@ uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pat
     if (!GetModuleInformation(hProcess, hMod, &modInfo, sizeof(modInfo)))
         return 0;
     std::vector<Byte> buffer(modInfo.SizeOfImage);
-    SIZE_T bytesRead;
+    SIZE_T bytesRead = 0;
     if (!ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead))
         return 0;
+
+    buffer.resize(bytesRead);
+
     size_t foundOffset = findPatternMask(buffer, pattern, mask);
-    if (foundOffset == std::string::npos || foundOffset + 7 > buffer.size())
+    if (foundOffset == std::string::npos || foundOffset + 7 > bytesRead)
         return 0;
     foundOffset = adjustFoundOffsetForGroup(buffer, foundOffset, group);
     int32_t disp = *reinterpret_cast<const int32_t*>(&buffer[foundOffset + 3]);

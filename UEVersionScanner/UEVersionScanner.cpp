@@ -127,19 +127,22 @@ std::string GetVersionFromProcessMemory(HANDLE hProcess) {
         MODULEINFO modInfo = { 0 };
         if (GetModuleInformation(hProcess, hMod, &modInfo, sizeof(modInfo))) {
             std::vector<char> buffer(modInfo.SizeOfImage);
-            SIZE_T bytesRead;
+            SIZE_T bytesRead = 0;
             if (ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead)) {
+
+                buffer.resize(bytesRead);
+
                 std::vector<std::string> markers = { "Unreal Engine 4.", "Unreal Engine 5.", "FEngineVersion", "EngineVersion" };
                 for (const auto& marker : markers) {
                     size_t markerLen = marker.length();
                     if (!CanScan(buffer.size(), markerLen))
                         continue;
-                    for (size_t i = 0; i < buffer.size() - markerLen; i++) {
+                    for (size_t i = 0; i + markerLen <= bytesRead; i++) {
                         if (memcmp(buffer.data() + i, marker.c_str(), markerLen) == 0) {
                             std::string found(marker);
                             size_t maxExtra = 32;
                             size_t j = i + markerLen;
-                            while (j < buffer.size() && (j - (i + markerLen)) < maxExtra && isprint(buffer[j])) {
+                            while (j < bytesRead && (j - (i + markerLen)) < maxExtra && isprint(buffer[j])) {
                                 found.push_back(buffer[j]);
                                 j++;
                             }

@@ -176,6 +176,8 @@ size_t findPatternMask(const std::vector<Byte>& data,
     const std::string& mask) {
     if (pattern.size() != mask.size() || pattern.empty() || data.empty())
         return std::string::npos;
+    if (data.size() < pattern.size())
+        return std::string::npos;
     for (size_t i = 0; i <= data.size() - pattern.size(); ++i) {
         bool found = true;
         for (size_t j = 0; j < pattern.size(); ++j) {

@@ -10,8 +10,8 @@
 #include <iomanip>
 
 // Maximum allowed size for files and process images to prevent excessive memory use.
-constexpr size_t MAX_FILE_SIZE = 100 * 1024 * 1024;     // 100 MB
-constexpr size_t MAX_IMAGE_SIZE = 512 * 1024 * 1024;    // 512 MB
+constexpr size_t MAX_FILE_SIZE = 500 * 1024 * 1024;     // 500 MB
+constexpr size_t MAX_IMAGE_SIZE = 2000 * 1024 * 1024;    // 2000 MB
 
 // Reads the binary file.
 std::vector<Byte> readBinaryFile(const std::string& filename) {

@@ -10,8 +10,8 @@
 #include <iomanip>
 
 // Maximum allowed size for files and process images to prevent excessive memory use.
-constexpr size_t MAX_FILE_SIZE = 500 * 1024 * 1024;     // 500 MB
-constexpr size_t MAX_IMAGE_SIZE = 2000 * 1024 * 1024;    // 2000 MB
+constexpr size_t MAX_FILE_SIZE = 500ULL * 1024ULL * 1024ULL;     // 500 MB
+constexpr size_t MAX_IMAGE_SIZE = 2000ULL * 1024ULL * 1024ULL;   // 2000 MB
 
 // Reads the binary file.
 std::vector<Byte> readBinaryFile(const std::string& filename) {
@@ -236,9 +236,10 @@ uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pat
                   << " bytes exceeds limit of " << MAX_IMAGE_SIZE << std::endl;
         return 0;
     }
-    std::vector<Byte> buffer(modInfo.SizeOfImage);
+    std::vector<Byte> buffer(static_cast<size_t>(modInfo.SizeOfImage));
     SIZE_T bytesRead = 0;
-    if (!ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead))
+    if (!ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(),
+                           static_cast<SIZE_T>(modInfo.SizeOfImage), &bytesRead))
         return 0;
 
     buffer.resize(bytesRead);

@@ -14,8 +14,8 @@
 #pragma comment(lib, "Version.lib")
 
 // Maximum allowed sizes to avoid excessive allocations.
-constexpr size_t MAX_FILE_SIZE = 100 * 1024 * 1024;     // 100 MB
-constexpr size_t MAX_IMAGE_SIZE = 512 * 1024 * 1024;    // 512 MB
+constexpr size_t MAX_FILE_SIZE = 100ULL * 1024ULL * 1024ULL;    // 100 MB
+constexpr size_t MAX_IMAGE_SIZE = 512ULL * 1024ULL * 1024ULL;   // 512 MB
 
 // Helper: Reads an entire file into a string.
 static std::string ReadEntireFile(const std::string& filePath) {
@@ -45,16 +45,17 @@ std::string GetVersionFromResource(const std::string& filePath) {
         return "";
     }
     DWORD dummy;
-    DWORD size = GetFileVersionInfoSizeA(modulePath, &dummy);
-    if (size == 0)
+    DWORD size_dw = GetFileVersionInfoSizeA(modulePath, &dummy);
+    if (size_dw == 0)
         return "";
+    size_t size = static_cast<size_t>(size_dw);
     if (size > MAX_FILE_SIZE) {
         std::cerr << "Error: Version info resource is too large (" << size
                   << " bytes; limit is " << MAX_FILE_SIZE << ")." << std::endl;
         return "";
     }
     std::vector<char> data(size);
-    if (!GetFileVersionInfoA(modulePath, 0, size, data.data()))
+    if (!GetFileVersionInfoA(modulePath, 0, size_dw, data.data()))
         return "";
     VS_FIXEDFILEINFO* fileInfo = nullptr;
     UINT len = 0;
@@ -153,9 +154,10 @@ std::string GetVersionFromProcessMemory(HANDLE hProcess) {
                           << " bytes exceeds limit of " << MAX_IMAGE_SIZE << std::endl;
                 return "";
             }
-            std::vector<char> buffer(modInfo.SizeOfImage);
+            std::vector<char> buffer(static_cast<size_t>(modInfo.SizeOfImage));
             SIZE_T bytesRead = 0;
-            if (ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead)) {
+            if (ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(),
+                                  static_cast<SIZE_T>(modInfo.SizeOfImage), &bytesRead)) {
 
                 buffer.resize(bytesRead);
 

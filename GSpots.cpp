@@ -61,9 +61,10 @@ int main(int argc, char* argv[]) {
 
                 int32_t disp = *reinterpret_cast<const int32_t*>(&data[foundOffset + 3]);
                 size_t nextInstr = foundOffset + 7;
-                size_t rawAddress = nextInstr + disp;
+                int64_t rawAddress = static_cast<int64_t>(nextInstr) + disp;
+                size_t rawAddressPos = static_cast<size_t>(rawAddress);
                 uint32_t sectionDelta = getSectionDelta(data, foundOffset);
-                uint64_t computedAddress = rawAddress + sectionDelta;
+                uint64_t computedAddress = rawAddressPos + sectionDelta;
 
                 if (sig.name.find("GWorld") != std::string::npos && fileGWorld == 0)
                     fileGWorld = computedAddress;

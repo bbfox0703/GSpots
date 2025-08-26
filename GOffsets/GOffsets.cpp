@@ -250,8 +250,9 @@ uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pat
     foundOffset = adjustFoundOffsetForGroup(buffer, foundOffset, group);
     int32_t disp = *reinterpret_cast<const int32_t*>(&buffer[foundOffset + 3]);
     size_t nextInstr = foundOffset + 7;
-    size_t rawAddress = nextInstr + disp;
-    uint64_t rva = rawAddress;
+    int64_t rawAddress = static_cast<int64_t>(nextInstr) + disp;
+    size_t rawAddressPos = static_cast<size_t>(rawAddress);
+    uint64_t rva = rawAddressPos;
     return rva;
 }
 

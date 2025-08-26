@@ -109,7 +109,7 @@ std::string GetVersionFromMemoryScan() {
                 std::string found(marker);
                 size_t maxExtra = 32;
                 size_t j = i + markerLen;
-                while (j < moduleSize && (j - (i + markerLen)) < maxExtra && isprint(baseAddr[j])) {
+                while (j < moduleSize && (j - (i + markerLen)) < maxExtra && isprint(static_cast<unsigned char>(baseAddr[j]))) {
                     found.push_back(baseAddr[j]);
                     j++;
                 }
@@ -142,7 +142,7 @@ std::string GetVersionFromProcessMemory(HANDLE hProcess) {
                             std::string found(marker);
                             size_t maxExtra = 32;
                             size_t j = i + markerLen;
-                            while (j < bytesRead && (j - (i + markerLen)) < maxExtra && isprint(buffer[j])) {
+                            while (j < bytesRead && (j - (i + markerLen)) < maxExtra && isprint(static_cast<unsigned char>(buffer[j]))) {
                                 found.push_back(buffer[j]);
                                 j++;
                             }

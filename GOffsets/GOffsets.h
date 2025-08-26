@@ -16,6 +16,9 @@ struct Signature {
 
 std::vector<Byte> readBinaryFile(const std::string& filename);
 std::vector<Signature> getSignatures();
+std::vector<Signature> loadSignaturesFromJSON(const std::string& filename);
+std::vector<Signature> getBuiltinSignatures();
+std::vector<Byte> parseHexPattern(const std::string& hexPattern);
 
 // 'x' = fixed byte, '?' = wildcard.
 size_t findPatternMask(const std::vector<Byte>& data,

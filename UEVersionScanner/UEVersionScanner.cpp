@@ -7,10 +7,15 @@
 #include <vector>
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <windows.h>
 #include <TlHelp32.h>
 #include <Psapi.h>
 #pragma comment(lib, "Version.lib")
+
+// Maximum allowed sizes to avoid excessive allocations.
+constexpr size_t MAX_FILE_SIZE = 100ULL * 1024ULL * 1024ULL;    // 100 MB
+constexpr size_t MAX_IMAGE_SIZE = 512ULL * 1024ULL * 1024ULL;   // 512 MB
 
 // Helper: Reads an entire file into a string.
 static std::string ReadEntireFile(const std::string& filePath) {
@@ -34,13 +39,23 @@ static bool CanScan(size_t bufferSize, size_t markerLen) {
 
 std::string GetVersionFromResource(const std::string& filePath) {
     char modulePath[MAX_PATH] = { 0 };
-    strcpy_s(modulePath, filePath.c_str());
-    DWORD dummy;
-    DWORD size = GetFileVersionInfoSizeA(modulePath, &dummy);
-    if (size == 0)
+    errno_t pathCopyResult = strcpy_s(modulePath, filePath.c_str());
+    if (pathCopyResult != 0) {
+        std::cerr << "strcpy_s failed to copy file path in GetVersionFromResource\n";
         return "";
+    }
+    DWORD dummy;
+    DWORD size_dw = GetFileVersionInfoSizeA(modulePath, &dummy);
+    if (size_dw == 0)
+        return "";
+    size_t size = static_cast<size_t>(size_dw);
+    if (size > MAX_FILE_SIZE) {
+        std::cerr << "Error: Version info resource is too large (" << size
+                  << " bytes; limit is " << MAX_FILE_SIZE << ")." << std::endl;
+        return "";
+    }
     std::vector<char> data(size);
-    if (!GetFileVersionInfoA(modulePath, 0, size, data.data()))
+    if (!GetFileVersionInfoA(modulePath, 0, size_dw, data.data()))
         return "";
     VS_FIXEDFILEINFO* fileInfo = nullptr;
     UINT len = 0;
@@ -50,7 +65,11 @@ std::string GetVersionFromResource(const std::string& filePath) {
         int build = HIWORD(fileInfo->dwFileVersionLS);
         int revision = LOWORD(fileInfo->dwFileVersionLS);
         char versionStr[128];
-        sprintf_s(versionStr, "%d.%d.%d.%d", major, minor, build, revision);
+        int versionResult = sprintf_s(versionStr, "%d.%d.%d.%d", major, minor, build, revision);
+        if (versionResult <= 0) {
+            std::cerr << "sprintf_s failed to format version string in GetVersionFromResource\n";
+            return "";
+        }
         return versionStr;
     }
     return "";
@@ -58,7 +77,11 @@ std::string GetVersionFromResource(const std::string& filePath) {
 
 std::string GetVersionFromFiles(const std::string& filePath) {
     char modulePath[MAX_PATH] = { 0 };
-    strcpy_s(modulePath, filePath.c_str());
+    errno_t pathCopyResult = strcpy_s(modulePath, filePath.c_str());
+    if (pathCopyResult != 0) {
+        std::cerr << "strcpy_s failed to copy file path in GetVersionFromFiles\n";
+        return "";
+    }
     std::string exePath(modulePath);
     size_t lastSlash = exePath.find_last_of("\\/");
     std::string exeDir;
@@ -109,7 +132,7 @@ std::string GetVersionFromMemoryScan() {
                 std::string found(marker);
                 size_t maxExtra = 32;
                 size_t j = i + markerLen;
-                while (j < moduleSize && (j - (i + markerLen)) < maxExtra && isprint(baseAddr[j])) {
+                while (j < moduleSize && (j - (i + markerLen)) < maxExtra && isprint(static_cast<unsigned char>(baseAddr[j]))) {
                     found.push_back(baseAddr[j]);
                     j++;
                 }
@@ -126,9 +149,15 @@ std::string GetVersionFromProcessMemory(HANDLE hProcess) {
     if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
         MODULEINFO modInfo = { 0 };
         if (GetModuleInformation(hProcess, hMod, &modInfo, sizeof(modInfo))) {
-            std::vector<char> buffer(modInfo.SizeOfImage);
+            if (modInfo.SizeOfImage > MAX_IMAGE_SIZE) {
+                std::cerr << "Error: Process module size " << modInfo.SizeOfImage
+                          << " bytes exceeds limit of " << MAX_IMAGE_SIZE << std::endl;
+                return "";
+            }
+            std::vector<char> buffer(static_cast<size_t>(modInfo.SizeOfImage));
             SIZE_T bytesRead = 0;
-            if (ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead)) {
+            if (ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(),
+                                  static_cast<SIZE_T>(modInfo.SizeOfImage), &bytesRead)) {
 
                 buffer.resize(bytesRead);
 
@@ -142,7 +171,7 @@ std::string GetVersionFromProcessMemory(HANDLE hProcess) {
                             std::string found(marker);
                             size_t maxExtra = 32;
                             size_t j = i + markerLen;
-                            while (j < bytesRead && (j - (i + markerLen)) < maxExtra && isprint(buffer[j])) {
+                            while (j < bytesRead && (j - (i + markerLen)) < maxExtra && isprint(static_cast<unsigned char>(buffer[j]))) {
                                 found.push_back(buffer[j]);
                                 j++;
                             }

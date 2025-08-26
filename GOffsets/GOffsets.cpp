@@ -16,10 +16,19 @@ std::vector<Byte> readBinaryFile(const std::string& filename) {
         return {};
     }
     file.seekg(0, std::ios::end);
-    size_t fileSize = file.tellg();
+    std::streampos fileSizePos = file.tellg();
+    if (fileSizePos == std::streampos(-1)) {
+        std::cerr << "Error: Failed to determine size of " << filename << std::endl;
+        return {};
+    }
+    size_t fileSize = static_cast<size_t>(fileSizePos);
     std::vector<Byte> buffer(fileSize);
     file.seekg(0, std::ios::beg);
     file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+    if (!file || static_cast<size_t>(file.gcount()) != fileSize) {
+        std::cerr << "Error: Failed to read file " << filename << std::endl;
+        return {};
+    }
     return buffer;
 }
 
@@ -171,7 +180,7 @@ std::vector<Signature> getSignatures() {
          0x48, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48,
          0x8D, 0x4D, 0x00, 0xFF, 0x15},
         "xxx????xxxxxxxxx?xxxxx?????xxx?xx"
-        }); //Farlight 84 (Aug. 2025 Update)
+        }); //Farlight 84 (Aug. 2025 Update)		
     // ----------------------------------------------
     // END GOBJECTS
     // ----------------------------------------------
@@ -184,6 +193,8 @@ size_t findPatternMask(const std::vector<Byte>& data,
     const std::vector<Byte>& pattern,
     const std::string& mask) {
     if (pattern.size() != mask.size() || pattern.empty() || data.empty())
+        return std::string::npos;
+    if (data.size() < pattern.size())
         return std::string::npos;
     for (size_t i = 0; i <= data.size() - pattern.size(); ++i) {
         bool found = true;
@@ -238,11 +249,14 @@ uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pat
     if (!GetModuleInformation(hProcess, hMod, &modInfo, sizeof(modInfo)))
         return 0;
     std::vector<Byte> buffer(modInfo.SizeOfImage);
-    SIZE_T bytesRead;
+    SIZE_T bytesRead = 0;
     if (!ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead))
         return 0;
+
+    buffer.resize(bytesRead);
+
     size_t foundOffset = findPatternMask(buffer, pattern, mask);
-    if (foundOffset == std::string::npos || foundOffset + 7 > buffer.size())
+    if (foundOffset == std::string::npos || foundOffset + 7 > bytesRead)
         return 0;
     foundOffset = adjustFoundOffsetForGroup(buffer, foundOffset, group);
     int32_t disp = *reinterpret_cast<const int32_t*>(&buffer[foundOffset + 3]);

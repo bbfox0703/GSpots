@@ -9,6 +9,10 @@
 #include <Psapi.h>
 #include <iomanip>
 
+// Maximum allowed size for files and process images to prevent excessive memory use.
+constexpr size_t MAX_FILE_SIZE = 100 * 1024 * 1024;     // 100 MB
+constexpr size_t MAX_IMAGE_SIZE = 512 * 1024 * 1024;    // 512 MB
+
 // Reads the binary file.
 std::vector<Byte> readBinaryFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::binary);
@@ -23,6 +27,11 @@ std::vector<Byte> readBinaryFile(const std::string& filename) {
         return {};
     }
     size_t fileSize = static_cast<size_t>(fileSizePos);
+    if (fileSize > MAX_FILE_SIZE) {
+        std::cerr << "Error: File " << filename << " is too large (" << fileSize
+                  << " bytes; limit is " << MAX_FILE_SIZE << ")." << std::endl;
+        return {};
+    }
     std::vector<Byte> buffer(fileSize);
     file.seekg(0, std::ios::beg);
     file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
@@ -222,6 +231,11 @@ uint64_t findOffsetInProcessMemory(HANDLE hProcess, const std::vector<Byte>& pat
     MODULEINFO modInfo = { 0 };
     if (!GetModuleInformation(hProcess, hMod, &modInfo, sizeof(modInfo)))
         return 0;
+    if (modInfo.SizeOfImage > MAX_IMAGE_SIZE) {
+        std::cerr << "Error: Module image size " << modInfo.SizeOfImage
+                  << " bytes exceeds limit of " << MAX_IMAGE_SIZE << std::endl;
+        return 0;
+    }
     std::vector<Byte> buffer(modInfo.SizeOfImage);
     SIZE_T bytesRead = 0;
     if (!ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead))

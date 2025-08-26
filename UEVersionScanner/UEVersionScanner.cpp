@@ -13,6 +13,10 @@
 #include <Psapi.h>
 #pragma comment(lib, "Version.lib")
 
+// Maximum allowed sizes to avoid excessive allocations.
+constexpr size_t MAX_FILE_SIZE = 100 * 1024 * 1024;     // 100 MB
+constexpr size_t MAX_IMAGE_SIZE = 512 * 1024 * 1024;    // 512 MB
+
 // Helper: Reads an entire file into a string.
 static std::string ReadEntireFile(const std::string& filePath) {
     std::ifstream file(filePath, std::ios::binary);
@@ -44,6 +48,11 @@ std::string GetVersionFromResource(const std::string& filePath) {
     DWORD size = GetFileVersionInfoSizeA(modulePath, &dummy);
     if (size == 0)
         return "";
+    if (size > MAX_FILE_SIZE) {
+        std::cerr << "Error: Version info resource is too large (" << size
+                  << " bytes; limit is " << MAX_FILE_SIZE << ")." << std::endl;
+        return "";
+    }
     std::vector<char> data(size);
     if (!GetFileVersionInfoA(modulePath, 0, size, data.data()))
         return "";
@@ -139,6 +148,11 @@ std::string GetVersionFromProcessMemory(HANDLE hProcess) {
     if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
         MODULEINFO modInfo = { 0 };
         if (GetModuleInformation(hProcess, hMod, &modInfo, sizeof(modInfo))) {
+            if (modInfo.SizeOfImage > MAX_IMAGE_SIZE) {
+                std::cerr << "Error: Process module size " << modInfo.SizeOfImage
+                          << " bytes exceeds limit of " << MAX_IMAGE_SIZE << std::endl;
+                return "";
+            }
             std::vector<char> buffer(modInfo.SizeOfImage);
             SIZE_T bytesRead = 0;
             if (ReadProcessMemory(hProcess, modInfo.lpBaseOfDll, buffer.data(), modInfo.SizeOfImage, &bytesRead)) {

@@ -7,6 +7,7 @@
 #include <vector>
 #include <windows.h>
 #include <Psapi.h>
+#include <iomanip>
 
 // Reads the binary file.
 std::vector<Byte> readBinaryFile(const std::string& filename) {
@@ -32,12 +33,108 @@ std::vector<Byte> readBinaryFile(const std::string& filename) {
     return buffer;
 }
 
-// Signatures
-std::vector<Signature> getSignatures() {
+std::vector<Byte> parseHexPattern(const std::string& hexPattern) {
+    std::vector<Byte> pattern;
+    std::istringstream iss(hexPattern);
+    std::string byteStr;
+    
+    while (iss >> byteStr) {
+        if (byteStr == "??") {
+            pattern.push_back(0x00);
+        } else {
+            pattern.push_back(static_cast<Byte>(std::stoul(byteStr, nullptr, 16)));
+        }
+    }
+    return pattern;
+}
+
+std::vector<Signature> loadSignaturesFromJSON(const std::string& filename) {
     std::vector<Signature> sigs;
-    // ----------------------------------------------
-    // START GWORLDS
-    // ----------------------------------------------
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Warning: Could not open signatures file: " << filename << std::endl;
+        std::cerr << "Using built-in fallback signatures." << std::endl;
+        return getBuiltinSignatures();
+    }
+
+    std::string line;
+    std::string content;
+    while (std::getline(file, line)) {
+        content += line;
+    }
+    file.close();
+
+    size_t pos = 0;
+    std::string categories[] = {"gworld", "gnames", "gobjects"};
+    
+    for (const auto& category : categories) {
+        std::string searchKey = "\"" + category + "\":";
+        size_t categoryPos = content.find(searchKey);
+        if (categoryPos == std::string::npos) continue;
+        
+        size_t arrayStart = content.find('[', categoryPos);
+        if (arrayStart == std::string::npos) continue;
+        
+        size_t arrayEnd = content.find(']', arrayStart);
+        if (arrayEnd == std::string::npos) continue;
+        
+        std::string arrayContent = content.substr(arrayStart + 1, arrayEnd - arrayStart - 1);
+        
+        size_t objStart = 0;
+        while ((objStart = arrayContent.find('{', objStart)) != std::string::npos) {
+            size_t objEnd = arrayContent.find('}', objStart);
+            if (objEnd == std::string::npos) break;
+            
+            std::string objContent = arrayContent.substr(objStart + 1, objEnd - objStart - 1);
+            
+            std::string name, pattern, mask;
+            
+            size_t namePos = objContent.find("\"name\":");
+            if (namePos != std::string::npos) {
+                size_t nameStart = objContent.find('\"', namePos + 7) + 1;
+                size_t nameEnd = objContent.find('\"', nameStart);
+                if (nameEnd != std::string::npos) {
+                    name = objContent.substr(nameStart, nameEnd - nameStart);
+                }
+            }
+            
+            size_t patternPos = objContent.find("\"pattern\":");
+            if (patternPos != std::string::npos) {
+                size_t patternStart = objContent.find('\"', patternPos + 10) + 1;
+                size_t patternEnd = objContent.find('\"', patternStart);
+                if (patternEnd != std::string::npos) {
+                    pattern = objContent.substr(patternStart, patternEnd - patternStart);
+                }
+            }
+            
+            size_t maskPos = objContent.find("\"mask\":");
+            if (maskPos != std::string::npos) {
+                size_t maskStart = objContent.find('\"', maskPos + 7) + 1;
+                size_t maskEnd = objContent.find('\"', maskStart);
+                if (maskEnd != std::string::npos) {
+                    mask = objContent.substr(maskStart, maskEnd - maskStart);
+                }
+            }
+            
+            if (!name.empty() && !pattern.empty() && !mask.empty()) {
+                sigs.push_back({name, parseHexPattern(pattern), mask});
+            }
+            
+            objStart = objEnd + 1;
+        }
+    }
+    
+    if (sigs.empty()) {
+        std::cerr << "Warning: No valid signatures loaded from JSON. Using built-in fallback." << std::endl;
+        return getBuiltinSignatures();
+    }
+    
+    return sigs;
+}
+
+std::vector<Signature> getBuiltinSignatures() {
+    std::vector<Signature> sigs;
+    // Fallback built-in signatures
     sigs.push_back({ "GWorld (Variant 1)",
         {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
          0x00, 0x00, 0x8B, 0x00, 0x00, 0x00,
@@ -45,67 +142,6 @@ std::vector<Signature> getSignatures() {
          0x40},
         "xxx?????x???xxxxxxx"
         });
-
-    sigs.push_back({ "GWorld (Variant 2)",
-        {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
-         0x00, 0x00, 0x8B, 0x00, 0x00, 0xF6,
-         0x86, 0x3B, 0x01, 0x00, 0x00, 0x40},
-        "xxx?????x??xxxxxxx"
-        });
-
-    sigs.push_back({ "GWorld (Variant 3)",
-        {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
-         0x00, 0x00, 0x8B, 0x00, 0x00, 0x00,
-         0x00, 0x00, 0xF6, 0x86, 0x00, 0x01,
-         0x00, 0x00, 0x40},
-        "xxx?????x?????xx?xxxx"
-        });
-
-    sigs.push_back({ "GWorld (Variant 4)",
-        {0x00, 0x8B, 0x00, 0x00, 0x00, 0x00,
-         0x00, 0x00, 0x48, 0x89, 0x05, 0x00,
-         0x00, 0x00, 0x00, 0x00, 0x8B, 0x00,
-         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-         0x00, 0x00, 0x00, 0x00, 0x00},
-        "?x???xx?xxx?????x???xx?????x?"
-        });
-
-    sigs.push_back({ "GWorld (Variant 5)",
-        {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
-         0x02, 0x48, 0x8B, 0x8F, 0xA0, 0x00,
-         0x00, 0x00},
-        "xxx???xxxxx???"
-        }); // IDK about this AOB.
-
-    sigs.push_back({ "GWorld (Variant 6)",
-        {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
-         0x00, 0x49, 0x8B, 0x00, 0x78, 0xF6,
-         0x00, 0x3B, 0x01, 0x00, 0x00, 0x40},
-        "xxx????xx?xx?xx??x"
-        });
-
-    sigs.push_back({ "GWorld (Variant 7)",
-        {0xE8, 0x00, 0x00, 0x00, 0xFF, 0x00,
-         0x8B, 0x00, 0x78, 0x48, 0x89, 0x05,
-         0x00, 0x00, 0x00, 0x00, 0x00, 0x8B,
-         0x00, 0x78},
-        "x???x?x?xxxx?????x?x"
-        });
-
-    sigs.push_back({ "GWorld (Variant 8)",
-       {0x48, 0x89, 0x05, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x8B, 0x00, 0x88, 0x00,
-        0x00, 0x00, 0xF6, 0x00, 0x0B, 0x01,
-        0x00, 0x00, 0x40, 0x75, 0x00},
-        "xxx?????x?x???x?xx??xx?"
-        });
-    // ----------------------------------------------
-    // END GWORLDS
-    // ----------------------------------------------
-
-    // ----------------------------------------------
-    // START GNAMES
-    // ----------------------------------------------
     sigs.push_back({ "GNames (Variant 1)",
         {0x48, 0x8D, 0x0D, 0x00, 0x00, 0x00,
          0x00, 0xE8, 0x00, 0x00, 0xFE, 0xFF,
@@ -113,79 +149,17 @@ std::vector<Signature> getSignatures() {
          0x00, 0x00, 0x00, 0x01},
         "xxx????x??xxxxxxx????x"
         });
-
-    sigs.push_back({ "GNames (Variant 2)",
-        {0x48, 0x8D, 0x0D, 0x00, 0x00, 0x00,
-         0x03, 0xE8, 0x00, 0x00, 0xFF, 0xFF,
-         0x4C, 0x00, 0xC0},
-        "xxx???xx??xxx?x"
-        });
-
-    sigs.push_back({ "GNames (Variant 3)",
-        {0x48, 0x8D, 0x0D, 0x00, 0x00, 0x00,
-         0x00, 0xE8, 0x00, 0x00, 0xFF, 0xFF,
-         0x48, 0x8B, 0xD0, 0xC6, 0x05, 0x00,
-         0x00, 0x00, 0x00, 0x01},
-        "xxx????x??xxxxxxx????x"
-        });
-
-    sigs.push_back({ "GNames (Variant 4)",
-        {0x48, 0x8B, 0X05, 0X00, 0x00, 0x00,
-         0x02, 0x48, 0x85, 0xC0, 0x75, 0x5F,
-         0xB9, 0x08, 0x08, 0x00},
-        "xxx???xxxxxxxxx?"
-        });
-    // ----------------------------------------------
-    // END GNAMES
-    // ----------------------------------------------
-
-    // ----------------------------------------------
-    // START GOBJECTS
-    // ----------------------------------------------
     sigs.push_back({ "GObjects (Variant 1)",
         {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
          0x00, 0x99, 0x0F, 0xB7, 0xD2},
         "xxx????xxxx"
         });
-
-    sigs.push_back({ "GObjects (Variant 2)",
-        {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
-         0x00, 0x41, 0x3B, 0xC0, 0x7D, 0x17},
-        "xxx????xxxxx"
-        });
-
-    sigs.push_back({ "GObjects (Variant 3)",
-        {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
-         0x04, 0x90, 0x0F, 0xB7, 0xC6, 0x8B,
-         0xD6},
-        "xxx???xxxxxxx"
-        });
-
-    sigs.push_back({ "GObjects (Variant 4)",
-        {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00, 0x00,
-         0x48, 0x98, 0x48, 0x8D, 0x0C, 0x40, 0x49},
-        "xxx????xxxxxxx"
-        }); // WUCHANG: Fallen Feathers
-
-    sigs.push_back({ "GObjects (Variant 5)",
-        {0x4C, 0x8B, 0x0D, 0x00, 0x00, 0x00,
-         0x00, 0x8B, 0xD0, 0xC1, 0xEA, 0x10},
-        "xxx????xxxxx"
-        });
-
-    sigs.push_back({ "GObjects (Variant 6)",
-        {0x48, 0x8B, 0x05, 0x00, 0x00, 0x00, 0x00,
-         0x4A, 0x8B, 0x0C, 0xC0, 0x48, 0x8D, 0x04,
-         0xD1, 0xEB, 0x00, 0x48, 0x8B, 0xC6, 0x81,
-         0x48, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48,
-         0x8D, 0x4D, 0x00, 0xFF, 0x15},
-        "xxx????xxxxxxxxx?xxxxx?????xxx?xx"
-        }); //Farlight 84 (Aug. 2025 Update)		
-    // ----------------------------------------------
-    // END GOBJECTS
-    // ----------------------------------------------
-
     return sigs;
+}
+
+// Load signatures from JSON file, fallback to built-in
+std::vector<Signature> getSignatures() {
+    return loadSignaturesFromJSON("config/signatures.json");
 }
 
 // Searches for a pattern.

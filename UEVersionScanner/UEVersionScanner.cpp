@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <windows.h>
 #include <TlHelp32.h>
 #include <Psapi.h>
@@ -34,7 +35,11 @@ static bool CanScan(size_t bufferSize, size_t markerLen) {
 
 std::string GetVersionFromResource(const std::string& filePath) {
     char modulePath[MAX_PATH] = { 0 };
-    strcpy_s(modulePath, filePath.c_str());
+    errno_t pathCopyResult = strcpy_s(modulePath, filePath.c_str());
+    if (pathCopyResult != 0) {
+        std::cerr << "strcpy_s failed to copy file path in GetVersionFromResource\n";
+        return "";
+    }
     DWORD dummy;
     DWORD size = GetFileVersionInfoSizeA(modulePath, &dummy);
     if (size == 0)
@@ -50,7 +55,11 @@ std::string GetVersionFromResource(const std::string& filePath) {
         int build = HIWORD(fileInfo->dwFileVersionLS);
         int revision = LOWORD(fileInfo->dwFileVersionLS);
         char versionStr[128];
-        sprintf_s(versionStr, "%d.%d.%d.%d", major, minor, build, revision);
+        int versionResult = sprintf_s(versionStr, "%d.%d.%d.%d", major, minor, build, revision);
+        if (versionResult <= 0) {
+            std::cerr << "sprintf_s failed to format version string in GetVersionFromResource\n";
+            return "";
+        }
         return versionStr;
     }
     return "";
@@ -58,7 +67,11 @@ std::string GetVersionFromResource(const std::string& filePath) {
 
 std::string GetVersionFromFiles(const std::string& filePath) {
     char modulePath[MAX_PATH] = { 0 };
-    strcpy_s(modulePath, filePath.c_str());
+    errno_t pathCopyResult = strcpy_s(modulePath, filePath.c_str());
+    if (pathCopyResult != 0) {
+        std::cerr << "strcpy_s failed to copy file path in GetVersionFromFiles\n";
+        return "";
+    }
     std::string exePath(modulePath);
     size_t lastSlash = exePath.find_last_of("\\/");
     std::string exeDir;
